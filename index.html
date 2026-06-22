@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Support Skill Tree</title>
+<style>
+  :root { --bg:#0b0f14; --card:#131a23; --line:#243140; --text:#e6edf5; --muted:#8595a8; --a1:#4ea1ff; --a2:#3ddc97; --a3:#ffb454; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.55; padding:24px; }
+  .wrap { max-width:920px; margin:0 auto; }
+  header { text-align:center; margin-bottom:18px; }
+  header h1 { font-size:1.9rem; }
+  header p { color:var(--muted); }
+  .overall { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 20px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .overall .bar { flex:1; min-width:160px; height:10px; background:#0c121a; border-radius:999px; overflow:hidden; }
+  .overall .bar > div { height:100%; background:linear-gradient(90deg,var(--a1),var(--a2)); }
+  .toolbar { margin-left:auto; display:flex; gap:8px; }
+  .btn { background:#1b2533; border:1px solid var(--line); color:var(--text); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:.85rem; }
+  .btn.p { background:var(--a1); border-color:var(--a1); color:#04122a; font-weight:600; }
+  .cat { background:var(--card); border:1px solid var(--line); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .cat > h2 { padding:14px 18px; font-size:1.08rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .cat > h2 .count { font-size:.78rem; color:var(--muted); font-weight:400; }
+  .skills { padding:0 18px 8px; }
+  .skill { border-top:1px solid var(--line); padding:14px 0; }
+  .skill h3 { font-size:.98rem; }
+  .skill .desc { color:var(--muted); font-size:.86rem; margin:2px 0 8px; }
+  .skill .task { font-size:.84rem; background:#0c121a; border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:8px; }
+  .skill .task b { color:var(--a3); }
+  .levels { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .lvl { background:#0c121a; border:1px solid var(--line); color:var(--text); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:.78rem; }
+  .lvl.active { background:var(--a2); border-color:var(--a2); color:#04261a; }
+  .evidence { width:100%; background:#0c121a; border:1px solid var(--line); color:var(--text); border-radius:8px; padding:8px; font-family:inherit; font-size:.84rem; }
+  .collapsed .skills { display:none; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛠️ IT Support Skill Tree</h1>
+    <p>A growth map for Level 1/2 IT support &amp; MSP fundamentals. Track confidence, log evidence.</p>
+  </header>
+  <div class="overall">
+    <strong id="pct">0%</strong>
+    <div class="bar"><div id="overallBar" style="width:0%"></div></div>
+    <span class="muted" id="summary" style="color:var(--muted);font-size:.82rem"></span>
+    <div class="toolbar">
+      <button class="btn" id="export">Export JSON</button>
+      <button class="btn" id="reset">Reset</button>
+    </div>
+  </div>
+  <div id="tree"></div>
+  <p style="color:var(--muted);font-size:.78rem;text-align:center;margin-top:14px">Progress is saved locally in your browser. No employer, ticket, or client data — keep it generic.</p>
+</div>
+<script>
+const KEY='it_skilltree_v1';
+const LEVELS=['New','Learning','Confident','Can teach'];
+const DATA=[
+  {cat:'Helpdesk fundamentals', skills:[
+    {id:'hd1', name:'Ticket lifecycle', desc:'Log, triage, prioritise, resolve, close a ticket cleanly.', task:'Write a sample ticket from report to resolution with clear notes.'},
+    {id:'hd2', name:'Prioritisation (P1–P4)', desc:'Judge impact vs urgency to set priority.', task:'Categorise 5 example issues by priority and justify each.'},
+  ]},
+  {cat:'Windows troubleshooting', skills:[
+    {id:'win1', name:'Boot & login issues', desc:'Diagnose no-boot, profile, and credential problems.', task:'Document a step-by-step for "user cannot log in".'},
+    {id:'win2', name:'Event Viewer & logs', desc:'Find the relevant error in logs.', task:'Trace one real error in Event Viewer to a cause.'},
+    {id:'win3', name:'Printers & drivers', desc:'Resolve common print-queue and driver faults.', task:'Clear a stuck print spooler from scratch.'},
+  ]},
+  {cat:'Microsoft 365', skills:[
+    {id:'m1', name:'Admin centre basics', desc:'Users, licences, password resets, MFA.', task:'Write the steps to onboard a new M365 user.'},
+    {id:'m2', name:'Exchange / mail flow', desc:'Shared mailboxes, aliases, basic mail-flow checks.', task:'Explain how to add a shared mailbox and grant access.'},
+  ]},
+  {cat:'Networking basics', skills:[
+    {id:'net1', name:'IP, DNS, DHCP', desc:'Understand addressing and name resolution.', task:'Diagram how a device gets an IP and resolves a domain.'},
+    {id:'net2', name:'Connectivity troubleshooting', desc:'ping, ipconfig, tracert, nslookup.', task:'Run a "no internet" diagnosis using CLI tools.'},
+  ]},
+  {cat:'Cybersecurity basics', skills:[
+    {id:'sec1', name:'Phishing & MFA', desc:'Spot phishing; explain why MFA matters.', task:'Write a 3-line "is this phishing?" checklist for users.'},
+    {id:'sec2', name:'Patching & backups', desc:'Why updates and tested backups matter.', task:'Describe a safe patch + backup routine for a small office.'},
+  ]},
+  {cat:'MSP tools', skills:[
+    {id:'msp1', name:'RMM & remote support', desc:'Remote into devices, run scripts, monitor.', task:'List the steps to safely start a remote session.'},
+    {id:'msp2', name:'PSA / ticketing', desc:'Time entries, SLAs, documentation links.', task:'Log a clean time entry with a useful work note.'},
+  ]},
+  {cat:'Documentation', skills:[
+    {id:'doc1', name:'Writing a KB article', desc:'Clear, repeatable, screenshot-backed steps.', task:'Write a KB article for one task you do often.'},
+    {id:'doc2', name:'Asset & config records', desc:'Keep accurate device/config records.', task:'Define the minimum fields for an asset record.'},
+  ]},
+  {cat:'Customer communication', skills:[
+    {id:'cc1', name:'Plain-English updates', desc:'Explain tech without jargon; set expectations.', task:'Rewrite a jargon-y update into plain English.'},
+    {id:'cc2', name:'De-escalation', desc:'Calm a frustrated user, own the next step.', task:'Draft a calm reply to an angry "still not fixed" email.'},
+  ]},
+];
+let state = load();
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function save(){ localStorage.setItem(KEY,JSON.stringify(state)); render(); }
+const $=id=>document.getElementById(id);
+
+function render(){
+  const tree=$('tree'); tree.innerHTML='';
+  let total=0, sum=0;
+  DATA.forEach(cat=>{
+    const div=document.createElement('div'); div.className='cat';
+    let done=0;
+    const skillsHtml=cat.skills.map(s=>{
+      const st=state[s.id]||{level:0,evidence:''};
+      total++; sum+=st.level; if(st.level>=2) done++;
+      return `<div class="skill">
+        <h3><span class="dot" style="background:${['#5b6675','#4ea1ff','#3ddc97','#ffb454'][st.level]}"></span>${s.name}</h3>
+        <div class="desc">${s.desc}</div>
+        <div class="task"><b>Practice:</b> ${s.task}</div>
+        <div class="levels">${LEVELS.map((l,i)=>`<span class="lvl ${st.level===i?'active':''}" data-s="${s.id}" data-l="${i}">${l}</span>`).join('')}</div>
+        <textarea class="evidence" data-s="${s.id}" placeholder="Evidence / notes (kept local) — what you did, a link, a date…">${st.evidence||''}</textarea>
+      </div>`;
+    }).join('');
+    div.innerHTML=`<h2>${cat.cat}<span class="count">${done}/${cat.skills.length} confident</span></h2><div class="skills">${skillsHtml}</div>`;
+    div.querySelector('h2').onclick=(e)=>{ if(e.target.closest('.lvl'))return; div.classList.toggle('collapsed'); };
+    tree.appendChild(div);
+  });
+  document.querySelectorAll('.lvl').forEach(el=>el.onclick=()=>{ const id=el.dataset.s; state[id]=state[id]||{evidence:''}; state[id].level=+el.dataset.l; save(); });
+  document.querySelectorAll('.evidence').forEach(el=>el.onblur=()=>{ const id=el.dataset.s; state[id]=state[id]||{level:0}; state[id].evidence=el.value; localStorage.setItem(KEY,JSON.stringify(state)); });
+  const pct=total?Math.round(sum/(total*3)*100):0;
+  $('pct').textContent=pct+'%'; $('overallBar').style.width=pct+'%';
+  $('summary').textContent=`${Object.values(state).filter(s=>s&&s.level>=2).length} of ${total} skills at "Confident" or above`;
+}
+$('export').onclick=()=>{ const out={exportedAt:new Date().toISOString(),skills:DATA.flatMap(c=>c.skills.map(s=>({category:c.cat,skill:s.name,...(state[s.id]||{level:0,evidence:''}),levelLabel:LEVELS[(state[s.id]||{}).level||0]})))}; const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='it-skills-progress.json'; a.click(); };
+$('reset').onclick=()=>{ if(confirm('Reset all progress and evidence notes?')){ state={}; save(); } };
+render();
+</script>
+</body>
+</html>
